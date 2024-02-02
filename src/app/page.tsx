@@ -4,6 +4,10 @@ import Navbar from "../components/Navbar";
 import { useQuery } from "react-query";
 import axios from "axios";
 import { format, parseISO } from "date-fns";
+import Container from "@/components/Container";
+import convertKelvinToF from "@/utils/convertKelvinToF";
+import WeatherIcon from "@/components/WeatherIcon";
+import getDayOrNightIcon from "@/utils/getDayOrNightIcon";
 
 
 // https://api.openweathermap.org/data/2.5/forecast?q=Phoenix&appid=fd6bc48aac94c49fa591ac65e98b154e
@@ -78,15 +82,15 @@ interface Coordinates {
 }
 
 
-
+//NEXT_PUBLIC_WEATHER_KEY = 'fd6bc48aac94c49fa591ac65e98b154e'w
 
 export default function Home() {
     const { isLoading, error, data } = useQuery<WeatherData>('repoData', async () => {
-      const {data} = await axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=Phoenix&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&cnt=2`);
+      const {data} = await axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=Phoenix&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}`);
       return data
     }
     );
-    console.log('data', data?.city.country);
+    console.log('data', data);
     if (isLoading) 
       return (
         <div className="flex items-center justify-center items-center min-h-screen">
@@ -99,14 +103,34 @@ export default function Home() {
     <div className="flex flex-col gap-4 bg-gray-100 min-h-screen">
       <Navbar />
       <main className="px-3 max-w-7xl mx-auto flex flex-col gap-9 w-full pb-10 pt-4">
-        <section>
+        <section className="space-y-4">
           {/* Todays data */}
-          <div>
+          <div className="space-y-2">
             <h2 className="flex gap-1 text-2xl items-end">
               <p>{format(parseISO(firstData?.dt_txt ?? ''), "EEEE")}</p>
-              <p className="text-lg">({format(parseISO(firstData?.dt_txt ?? ''), "m.dd.yyyy")})</p>
+              <p className="text-lg">({format(parseISO(firstData?.dt_txt ?? ''), "MMM dd, yyyy")})</p>
             </h2>
-            <div></div>
+            <Container className="gap-10 px-6 items-center">
+              <div className="flex flex-col px-4">
+                <span className="text-5xl">{convertKelvinToF(firstData?.main?.temp ?? 0)}°F</span>
+                <p className="text-xs space-x-1 whitespace-nowrap">Feels like {convertKelvinToF(firstData?.main?.feels_like ?? 0)}°F</p>
+                <p className="text-xs space-2">
+                  <span>L: {convertKelvinToF(firstData?.main?.temp_min ?? 0)}°F{" "}</span>
+                  <span>{" "}H: {convertKelvinToF(firstData?.main?.temp_max ?? 0)}°F</span>
+                </p>
+              </div>
+              <div className="flex gap-10 sm:gap-16 overflow-x-auto w-full justify-between pr-3">
+                {data?.list.map((d,i) => (
+                  <div
+                    key={i} 
+                    className="flex flex-col items-center justify-between gap-2 text-xs font-semibold">
+                      <p>{format(parseISO(d.dt_txt), "h:mm a")}</p>
+                      <WeatherIcon iconName={getDayOrNightIcon(d.weather[0].icon, d.dt_txt)} /> 
+                      <p>{convertKelvinToF(d.main.temp ?? 0)}°F</p>
+                  </div>
+                ))}
+              </div>
+            </Container>
           </div>
         </section>
         <section>
