@@ -3,11 +3,14 @@ import Image from "next/image";
 import Navbar from "../components/Navbar";
 import { useQuery } from "react-query";
 import axios from "axios";
-import { format, parseISO } from "date-fns";
+import { format, fromUnixTime, parseISO } from "date-fns";
 import Container from "@/components/Container";
 import convertKelvinToF from "@/utils/convertKelvinToF";
 import WeatherIcon from "@/components/WeatherIcon";
 import getDayOrNightIcon from "@/utils/getDayOrNightIcon";
+import WeatherDetails from "@/components/WeatherDetails";
+import { metersToMiles } from "@/utils/metersToMiles";
+import { convertWindSpeed } from "@/utils/convertWindSpeed";
 
 
 // https://api.openweathermap.org/data/2.5/forecast?q=Phoenix&appid=fd6bc48aac94c49fa591ac65e98b154e
@@ -140,7 +143,14 @@ export default function Home() {
               </p>
               <WeatherIcon iconName={getDayOrNightIcon(firstData?.weather[0]?.icon ?? '', firstData?.dt_txt ?? '')} />
             </Container>
-            <Container className="bg-yellow-300/80 px-6 gap-4 justify-between overflow-x-auto"/>
+            <Container className="bg-yellow-300/80 px-6 gap-4 justify-between overflow-x-auto">
+              <WeatherDetails airPressure={`${firstData?.main.pressure} hPa`} 
+              humidity={`${firstData?.main.humidity}%`} 
+              visibility={metersToMiles(firstData?.visibility ?? 10000)}
+              sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702949452), "h:mm a")}
+              sunset={format(fromUnixTime(data?.city.sunset ?? 1702949452), "h:mm a")}
+              windSpeed={convertWindSpeed(firstData?.wind.speed ?? 0)} />
+            </Container>
             {/*right*/}
           </div>
         </section>

@@ -1,5 +1,8 @@
 import React from 'react'
-import { LuEye } from 'react-icons/lu';
+import { FiDroplet } from 'react-icons/fi';
+import { ImMeter } from 'react-icons/im';
+import { LuEye, LuSunrise, LuSunset } from 'react-icons/lu';
+import { MdAir } from 'react-icons/md';
 
 export interface WeatherDetailProps {
     visibility: string;
@@ -11,17 +14,45 @@ export interface WeatherDetailProps {
 }
 
 export default function WeatherDetails(props: WeatherDetailProps) {
+  const {
+    visibility = '25 mi',
+    humidity = '50%',
+    windSpeed = '5 mph',
+    airPressure = '29.92 in',
+    sunrise = '5:00 AM',
+    sunset = '8:00 PM',
+  } = props;
   return (
     <>
     <SingleWeatherDetail 
     icon = {<LuEye />}
     information="Visibility"
-    value= {props.visibility}
+    value= {visibility}
     />
     <SingleWeatherDetail 
-    icon = {<LuEye />}
+    icon = {<FiDroplet />}
     information="Humidity"
-    value= {props.humidity}
+    value={humidity}
+    />
+    <SingleWeatherDetail
+    icon={<MdAir />}
+    information="Wind Speed"
+    value={windSpeed}
+    />
+    <SingleWeatherDetail
+    icon={<ImMeter />}
+    information="Air Pressure"
+    value={airPressure}
+    />
+    <SingleWeatherDetail
+    icon={<LuSunrise/>}
+    information="Sunrise"
+    value={sunrise}
+    />
+    <SingleWeatherDetail
+    icon={<LuSunset />}
+    information="Sunset"
+    value={sunset}
     />
     </>
   )
@@ -36,9 +67,12 @@ function SingleWeatherDetail(props: SingleWeatherDetailProps) {
   return (
     <div className="flex flex-col items-center justify-between gap-2 text-xs font-semibold text-black/80">
         <p className='whitespace-nowrap'>{props.information}</p> 
-        <div className='text-3xl'>{props.value}
-            <p>{props.value}</p>
+        
+        <div className='text-4xl'>
+        <p >{props.icon}</p>
+            
         </div>
+        <p className='text-2xl'>{props.value}</p>
     </div>
   )
 }
