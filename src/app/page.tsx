@@ -11,6 +11,10 @@ import getDayOrNightIcon from "@/utils/getDayOrNightIcon";
 import WeatherDetails from "@/components/WeatherDetails";
 import { metersToMiles } from "@/utils/metersToMiles";
 import { convertWindSpeed } from "@/utils/convertWindSpeed";
+import ForecastWeatherDetail from "@/components/ForecastWeatherDetail";
+import { useAtom } from "jotai";
+import { loadingCityAtom, placeAtom } from "./atom";
+import { useEffect } from "react";
 
 
 // https://api.openweathermap.org/data/2.5/forecast?q=Phoenix&appid=fd6bc48aac94c49fa591ac65e98b154e
@@ -88,12 +92,35 @@ interface Coordinates {
 //NEXT_PUBLIC_WEATHER_KEY = 'fd6bc48aac94c49fa591ac65e98b154e'w
 
 export default function Home() {
-    const { isLoading, error, data } = useQuery<WeatherData>('repoData', async () => {
-      const {data} = await axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=Phoenix&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}`);
+  const [place, setPlace] = useAtom(placeAtom);
+  const [loadingCity,] = useAtom(loadingCityAtom);
+    const { isLoading, error, data, refetch } = useQuery<WeatherData>('repoData', async () => {
+      const {data} = await axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=${place}&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&cnt=40`);
       return data
     }
     );
+
+    useEffect(() => {
+      refetch();
+    }, [place, refetch]);
+
     console.log('data', data);
+
+    const uniqueDates = [
+      ...new Set(
+        data?.list.map(
+        (entry) => new Date(entry.dt * 1000).toISOString().split('T')[0])
+        )
+    ];
+
+    const firstDataForEachDate = uniqueDates.map((date) => {
+        return data?.list.find((entry) => {
+          const entryDate = new Date(entry.dt * 1000).toISOString().split('T')[0];
+          const entryTime = new Date(entry.dt * 1000).getHours();
+          return entryDate === date && entryTime >=6;
+        });
+      });
+
     if (isLoading) 
       return (
         <div className="flex items-center justify-center items-center min-h-screen">
@@ -104,8 +131,10 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-4 bg-gray-100 min-h-screen">
-      <Navbar />
+      <Navbar location={data?.city.name}/>
       <main className="px-3 max-w-7xl mx-auto flex flex-col gap-9 w-full pb-10 pt-4">
+        {loadingCity ? (<WeatherSkeleton />) : (
+        <>
         <section className="space-y-4">
           {/* Todays data */}
           <div className="space-y-2">
@@ -157,8 +186,41 @@ export default function Home() {
         {/* 7 day forecast */}
         <section className="flex w-full flex-col gap-4">
           <p className="text-2xl">Forecast (7 days)</p>
+          {firstDataForEachDate.map((d,i)=>
+          <ForecastWeatherDetail key={i} 
+          description={d?.weather[0].description ?? ""} 
+          day={format(parseISO(d?.dt_txt ?? ''), "EEEE")} 
+          date={format(parseISO(d?.dt_txt ?? ''), "MMM dd")}
+          feels_like={d?.main?.feels_like ?? 0} 
+          temp={d?.main?.temp ?? 0} 
+          temp_max={d?.main?.temp_max ?? 0} 
+          temp_min={d?.main?.temp_min ?? 0} 
+          weatherIcon={d?.weather[0].icon ?? '02d'}
+          airPressure={`${d?.main?.pressure ?? 0} hpa`}
+          humidity={`${d?.main?.humidity ?? 0}%`}
+          visibility={metersToMiles(d?.visibility ?? 10000)}
+          windSpeed={convertWindSpeed(d?.wind?.speed ?? 0)}
+          sunrise={format(fromUnixTime(data?.city.sunrise ?? 1702949452), "h:mm a")}
+          sunset={format(fromUnixTime(data?.city.sunset ?? 1702949452), "h:mm a")}
+          />)}
         </section>
+        </>)}
       </main>
+    </div>
+  );
+}
+
+function WeatherSkeleton() {
+  return (
+    <div className="flex flex-col items-center justify-between gap-2 text-xs font-semibold text-black/80">
+      <div className="animate-pulse flex items-center justify-between gap-2 text-xs font-semibold text-black/80">
+        <div className="w-10 h-10 bg-slate-200 rounded-full"></div>
+        <div className="w-10 h-10 bg-slate-200 rounded-full"></div>
+      </div>
+      <div className="animate-pulse flex items-center justify-between gap-2 text-xs font-semibold text-black/80">
+        <div className="w-10 h-10 bg-slate-200 rounded-full"></div>
+        <div className="w-10 h-10 bg-slate-200 rounded-full"></div>
+      </div>
     </div>
   );
 }
